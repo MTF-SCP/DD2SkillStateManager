@@ -1,0 +1,20 @@
+# Local dependencies, archives and user-specific save/runtime data are never published.
+.tools/
+backups/
+dist/
+docs/runtime/
+**/__pycache__/
+*.pyc
+
+# Fetch pinned third-party reference data on demand; retain only provenance metadata.
+references/*
+!references/SOURCES.md
+!references/manifest.json
+!references/font-manifest.json
+
+# Generated reports contain host-specific paths/hashes and can be rebuilt.
+docs/static-results.json
+docs/STATIC_CHECK_REPORT.md
+docs/PACKAGE_CHECK_REPORT.md
+docs/package-manifest.json
+mod/STATIC_CHECK_REPORT.md

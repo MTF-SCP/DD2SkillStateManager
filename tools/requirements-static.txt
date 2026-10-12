@@ -1,0 +1,2 @@
+luaparser==4.0.0
+lupa==2.6

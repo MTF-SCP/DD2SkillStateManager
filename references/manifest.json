@@ -1,0 +1,145 @@
+[
+  {
+    "path": "references/REFramework/Sdk.cpp",
+    "url": "https://raw.githubusercontent.com/praydog/REFramework/d1461375aee4ec3f313170f8eaad12064eb542d9/src/mods/bindings/Sdk.cpp",
+    "sha256": "83a1a0cb11a346e0ff72191ba3eb7d918db15c92bb388952e479cdb4715c5cc8",
+    "bytes": 96526
+  },
+  {
+    "path": "references/REFramework/ImGui.cpp",
+    "url": "https://raw.githubusercontent.com/praydog/REFramework/d1461375aee4ec3f313170f8eaad12064eb542d9/src/mods/bindings/ImGui.cpp",
+    "sha256": "d7dfb8fd3a390f95b7d357541aa755a0cba7f06a697e7c5dbc23056e25f0876c",
+    "bytes": 85525
+  },
+  {
+    "path": "references/REFramework/ScriptRunner.cpp",
+    "url": "https://raw.githubusercontent.com/praydog/REFramework/d1461375aee4ec3f313170f8eaad12064eb542d9/src/mods/ScriptRunner.cpp",
+    "sha256": "c445db5a62ace02c6a727ea798ef2f63e25304ff723da6a36ee63b4dc652df40",
+    "bytes": 52752
+  },
+  {
+    "path": "references/REFramework/LICENSE",
+    "url": "https://raw.githubusercontent.com/praydog/REFramework/d1461375aee4ec3f313170f8eaad12064eb542d9/LICENSE",
+    "sha256": "7124c298a1fe76b169db561ee640101f88f573f21d1f269b34817b9538321f5f",
+    "bytes": 1064
+  },
+  {
+    "path": "references/Skill-Maker/SkillMaker.lua",
+    "url": "https://raw.githubusercontent.com/alphazolam/Skill-Maker/b9d5d51e369dc19873adfb05eb7967e53388b403/reframework/autorun/SkillMaker.lua",
+    "sha256": "5303bebe5556cef9cf35d05fe1111266fb66e1d16151038df896ecaa87ae7cb3",
+    "bytes": 344341
+  },
+  {
+    "path": "references/Skill-Maker/LICENSE",
+    "url": "https://raw.githubusercontent.com/alphazolam/Skill-Maker/b9d5d51e369dc19873adfb05eb7967e53388b403/LICENSE",
+    "sha256": "caac9314f1251b52b9f16f145d3471eba123e7c6918248ae6cfe39d5d16d2920",
+    "bytes": 1068
+  },
+  {
+    "path": "references/dd2-content-editor/utils.lua",
+    "url": "https://raw.githubusercontent.com/kagenocookie/dd2-content-editor/eabf3fc228eecbe5bff8a3a1f0d62384f84e51cd/dd2/editors/core/utils.lua",
+    "sha256": "6a469f31f30edd8d4adbb3e6974eb52ca76d75af452bc34b4993101c65cbe34e",
+    "bytes": 6384
+  },
+  {
+    "path": "references/dd2-content-editor/LICENSE",
+    "url": "https://raw.githubusercontent.com/kagenocookie/dd2-content-editor/eabf3fc228eecbe5bff8a3a1f0d62384f84e51cd/LICENSE",
+    "sha256": "2c65268f3c2904fb7a71d261b58338390c649f44e1f237cd65849efb79094ea1",
+    "bytes": 1069
+  },
+  {
+    "path": "references/REE-Lib-Resources/resource-info.json",
+    "url": "https://raw.githubusercontent.com/kagenocookie/REE-Lib-Resources/d40f266c9521eacb3232ebba0e97c9947a888a5b/resource-info.json",
+    "sha256": "e8a4f62331722a22a51a4cfe1e7160538633077b63858038a2b6ad3b6f831878",
+    "bytes": 14199
+  },
+  {
+    "path": "references/REE-Lib-Resources/il2cpp_cache.json",
+    "url": "https://raw.githubusercontent.com/kagenocookie/REE-Lib-Resources/d40f266c9521eacb3232ebba0e97c9947a888a5b/dd2/il2cpp_cache.json",
+    "sha256": "accaff1409b19045f869f377d3518106d1d4f57f6567f6e447c842ebc3eb00f5",
+    "bytes": 10143864
+  },
+  {
+    "path": "references/REE-Lib-Resources/LICENSE",
+    "url": "https://raw.githubusercontent.com/kagenocookie/REE-Lib-Resources/d40f266c9521eacb3232ebba0e97c9947a888a5b/LICENSE",
+    "sha256": "0f8cbb11b28c6e823e84074a280725b40f4a2bd25d62f3d1346a41452c91a4bb",
+    "bytes": 1069
+  },
+  {
+    "path": "references/REasy/rszdd2.json",
+    "url": "https://raw.githubusercontent.com/kagenocookie/REasy/103397ac389babfb852558da682e69b44d16fe0c/resources/data/dumps/rszdd2.json",
+    "sha256": "15767d4e6887f20b95e4ac4e8991d34ff787336ad5071e7fb36cc29b9b8a751d",
+    "bytes": 54686113
+  },
+  {
+    "path": "references/REasy/LICENSE",
+    "url": "https://raw.githubusercontent.com/kagenocookie/REasy/103397ac389babfb852558da682e69b44d16fe0c/LICENSE",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "path": "references/docs/sdk.html",
+    "url": "https://refdocs.praydog.com/api/sdk.html",
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "path": "references/docs/imgui.html",
+    "url": "https://refdocs.praydog.com/api/imgui.html",
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "path": "references/docs/re.html",
+    "url": "https://refdocs.praydog.com/api/re.html",
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "path": "references/docs/SystemArray.html",
+    "url": "https://refdocs.praydog.com/api/types/SystemArray.html",
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "path": "references/REFramework/Json.cpp",
+    "url": "https://raw.githubusercontent.com/praydog/REFramework/d1461375aee4ec3f313170f8eaad12064eb542d9/src/mods/bindings/Json.cpp",
+    "sha256": "33164a7bdf726dc66fda1a0483b8a51ce4d1d8dab840a3ee896d500ac69705fc",
+    "bytes": 4927
+  },
+  {
+    "path": "references/REFramework/REFramework.cpp",
+    "url": "https://raw.githubusercontent.com/praydog/REFramework/d1461375aee4ec3f313170f8eaad12064eb542d9/src/REFramework.cpp",
+    "sha256": "a67c9e7667947817a83e95bf92c2f1f334da6042d0d347e038da7e2e4648c771",
+    "bytes": 101131
+  },
+  {
+    "path": "references/REFramework/FS.cpp",
+    "url": "https://raw.githubusercontent.com/praydog/REFramework/d1461375aee4ec3f313170f8eaad12064eb542d9/src/mods/bindings/FS.cpp",
+    "sha256": "39746400332030ccecd6df96fc369169d5edb9897cfbcb8f94d77662c5583746",
+    "bytes": 11592
+  },
+  {
+    "path": "references/REFramework/SystemArray.cpp",
+    "url": "https://raw.githubusercontent.com/praydog/REFramework/d1461375aee4ec3f313170f8eaad12064eb542d9/shared/sdk/SystemArray.cpp",
+    "bytes": 7179,
+    "sha256": "1eeb7ddd8ab6a8a474dafa36515c6040e90e7606f4007cb7b1aa5c2a2993be5e",
+    "license": "MIT",
+    "commit": "d1461375aee4ec3f313170f8eaad12064eb542d9"
+  },
+  {
+    "path": "references/REFramework/SystemArray.hpp",
+    "url": "https://raw.githubusercontent.com/praydog/REFramework/d1461375aee4ec3f313170f8eaad12064eb542d9/shared/sdk/SystemArray.hpp",
+    "bytes": 2662,
+    "sha256": "9dcc149192920a1b0449fe4e411e468e85194ea3b72703971a43c4b9a96d5446",
+    "license": "MIT",
+    "commit": "d1461375aee4ec3f313170f8eaad12064eb542d9"
+  },
+  {
+    "path": "references/REFramework/imgui.h",
+    "url": "https://raw.githubusercontent.com/ocornut/imgui/85b2fe8486190fa9326565a2fb5fccb6caea4396/imgui.h",
+    "sha256": "47f0cef82f734dc511833499dce2b04b7ec2a73c3092f97ee5812aa41305d502",
+    "bytes": 409937
+  },
+  {
+    "path": "references/REFramework/imgui-LICENSE.txt",
+    "url": "https://raw.githubusercontent.com/ocornut/imgui/85b2fe8486190fa9326565a2fb5fccb6caea4396/LICENSE.txt",
+    "sha256": "c80c5789748d955c4a650562baa0d750494e2c7128c2ca66aaebe2e3c4e198bf",
+    "bytes": 1083
+  }
+]
