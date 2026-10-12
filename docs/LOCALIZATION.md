@@ -1,31 +1,31 @@
-# 中英语言适配
+# Localization and font layout
 
-## 规则和界面
+## Language policy
 
-默认模式为 `auto`。只有游戏文字语言枚举名称 `SimplelifiedChinese` 或 `TransitionalChinese` 映射为 `zh`；其他名称、未知枚举或读取失败统一映射 `en`。这些拼写来自实际 `via.Language` 类型资料，不用数值 12/13 猜测。
+`auto` is the default. Reflected game text language names `SimplelifiedChinese` and `TransitionalChinese` map to `zh`; every other/unknown language or unavailable detector maps to `en`. These spellings come from `via.Language`, rather than guessed numeric constants.
 
-顶部始终可选择自动、中文、English。中文 UI 和指定游戏文本采用简体中文；英文模式请求 English 文本，包括在日文、法文等游戏语言下。没有第三种界面语言。手动模式优先于检测，存储于 `reframework/data/DD2SkillStateManager/settings.json`，不写游戏配置。
+The top selector always offers Auto, 中文 and English. Manual selection takes precedence and is saved immediately to `reframework/data/DD2SkillStateManager/settings.json`. Chinese UI and game text use Simplified Chinese. The Mod never changes game text language, voice language or system settings.
 
-## 分层
+## Responsibilities and game text
 
-`i18n.lua` 只保存中英字典、格式化及角色/跳过原因的显示规则，不访问 SDK、游戏对象、ImGui 或写入模块。UI 接收普通数据，在渲染阶段选择翻译；角色、获取布尔值、等级、跳过原因代码与格式参数不预先拼成中文字符串。按钮和折叠项使用稳定的 `###` ID，切换文字不会改变控件身份。
+`i18n.lua` contains only static English/Chinese dictionaries, formatting and structured notices/skip reasons. It does not access game objects or ImGui. The UI translates portable role IDs, field IDs, booleans and grades at render time. Stable `###` widget IDs do not change with displayed language.
 
-控制器在游戏更新阶段每两秒读取可选文字语言接口，响应手动选择并立即保存偏好。变化时取消旧预览、重建文本目录；UI 清除名称搜索但保留选中 ID。语言识别失败不会锁定技能编辑功能。工具诊断导出检测结果、原生类型/方法及 `via.Language` 枚举。
+The controller reads the optional GUI text-language getter in the update stage, with exact reflected instance/no-argument/`via.Language` signature checks. An unavailable getter falls back to English without disabling editing. Manual override remains available.
 
-`access.game_language` 查找 `via.gui.GUISystem` 的 `get_MessageLanguage()`，预检无参数、实例方法、返回 `via.Language`，再从原生单例调用准确的方法描述。已保存的 REFramework C++ 绑定确认 MethodDefinition.call 接受 native pointer。该读取只涉及文字语言，不读取语音/系统语言，不改 GUI 语言字段。方法缺失或不匹配时捕获错误并回退英文；实际自动读取尚需本次游戏确认。
+Vocation names, skill names and descriptions use `via.gui.message.get(System.Guid, via.Language)` with the selected language. Missing text falls back to enum names or IDs. Changing language cancels previews, resets name search and rebuilds localized text caches while retaining selected IDs.
 
-`via.gui.message.get(System.Guid, via.Language)` 的静态 String 返回签名已经在第三次用户诊断中确认。职业名称、技能名称和说明使用显式语言参数，未知或缺失文本用英文枚举/ID 显示，不把当前其他游戏语言的文本混入英文模式。
+Display text is separate from valid-grade verification. Native upgrade-description checks remain in `validation_description`; selecting English must not enable a grade rejected under the verified game data. Catalogue stamps exclude translated strings, and game-language changes invalidate text-dependent caches.
 
-## 避免语言影响技能规则
+## Font and layout
 
-显示文本使用所选 `zh/en`；升级说明的可用性继续按原有原生当前游戏文字读取独立核验，保存为 `validation_description`。语言切换不会通过英文说明恰好可读就放开此前被筛掉的升级。参数 GUID、强化标记、职业范围、内容所有权、原生获取语义及事务过程保持原规则。
+Noto Sans CJK SC is bundled with its OFL license to cover Chinese and English. It loads once; every draw reads `imgui.get_default_font_size()` and uses `imgui.push_font(font, size)`. There is no independent Mod size setting.
 
-目录戳继续排除翻译字符串；是否可选取决于核验结果而非显示语言。用户真正更改游戏语言时也会使缓存失效，以重新读取当前有效原生资料。语言偏好操作没有学习/装备写入入口，不消耗 JP、不触发存档。
+Labels, role columns, wrapping and preview widths use current font measurements. Cached glyph widths are invalidated on size/language change. Narrow previews stack vertically and retain vocation names. ImGui font, table, disabled and local color stacks are closed even on drawing errors.
 
-## 静态验证和实际边界
+Confirm buttons are green, discard/locking/deletion red, and setup actions blue. Text still names each action explicitly; color is not the sole indicator. Pending previews display a reminder both near the top and before confirmation.
 
-用 Lua AST 读取两份静态字典，比较键集合、英文中文残留、`%d/%s` 格式参数及界面/状态引用。不执行翻译函数或 UI 模拟。核对固定版本 C++ 绑定、语言枚举资料和已导出 get(Guid, Language) 签名。实际中英文本载入、自动 detector、重载偏好和界面宽度仍需游戏观察。
+## Adding or editing text
 
-保留 CJK 字体以便语言切换，0.4.0 表单标签、角色列和预览列宽按当前字体测量；窄面板预览自动纵向排列。中文字体只加载一次，每帧用默认字号显式 push_font；没有独立字号配置。字体完全缺失时提示使用英文，以确保默认字体仍能显示必要的恢复提示。技术原始错误留在日志/诊断，普通界面状态始终通过翻译键输出。
+Keep English and Chinese keys/format parameters consistent, with portable field/role IDs independent of wording. Put technical errors, signatures and internal paths in logs/diagnostics, not in user-facing labels. Update both user guides when interaction changes.
 
-1.0 新增批量职业解锁、当前 / 所选职业 / JP 编辑分区、待确认提示和跳过原因的中英文资源，仍以静态 AST 比较键和格式参数。预览含具体职业名，包括窄面板模式；按钮颜色不决定写入规则，绿色确认与红色放弃的文本仍保持明确操作含义。
+Static validation parses both dictionaries with the Lua AST, checks key parity, placeholders and UI references, and verifies pinned API/enum evidence. It does not execute translation or UI functions. Font rendering, auto-detection, saved preferences and narrow/large-font layouts need manual observation; see [validation](RUNTIME_VALIDATION.md).

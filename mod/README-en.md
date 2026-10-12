@@ -1,71 +1,109 @@
-# DD2 Skill Controller 1.0
+# DD2 Skill Controller — User guide
 
-A REFramework Lua Mod for the PC Steam version of Dragon's Dogma 2. Manage active weapon skill acquisition and valid levels for the Arisen and Main Pawn, individually or in bulk. Skill discovery uses the game's own catalogue and text IDs.
+A REFramework Lua Mod for Dragon's Dogma 2 on PC Steam. Manage active weapon skills, vocation qualification, vocation rank and JP for the Arisen and Main Pawn.
 
-Version 1.0 fixes valid vocation/JP writes being rolled back by a duplicated progress fingerprint. It adds bulk vocation unlocking, separate current/selected-vocation panels, green confirmation, red discard/locking, and a clear pending-changes message. It supports selectable progress targets, English/Chinese game text and a font that follows REFramework settings. Weapon EX remains game-managed.
+## Requirements and installation
 
-## Install
+Install [REFramework](https://github.com/praydog/REFramework) separately. Close the game and back up the complete Steam `userdata/<Steam ID>/2054970/` directory before editing a save.
 
-Install REFramework separately. Close the game and back up the complete Steam `userdata/<Steam ID>/2054970/` directory before editing a save.
+**Manual installation:** merge the installation ZIP's `reframework` folder into the game directory beside `DD2.exe`. Keep this layout:
 
-For manual installation, merge the ZIP's `reframework` folder into the game directory, beside `DD2.exe`. Keep the nine Lua files and the bundled CJK font/license together. No Python or extra Lua libraries are required by the Mod.
+```text
+reframework/
+  autorun/
+    DD2SkillStateManager.lua
+    DD2SkillStateManager/
+      access.lua
+      catalog.lua
+      diagnostics.lua
+      i18n.lua
+      operations.lua
+      progress.lua
+      progress_access.lua
+      ui.lua
+  fonts/
+    DD2SkillStateManager-CJK.otf
+    DD2SkillStateManager-CJK-LICENSE.txt
+```
 
-The ZIP also includes `modinfo.ini` for Fluffy Mod Manager. Select Dragon's Dogma 2, import the ZIP and enable it. The package layout is checked; a particular Fluffy version's deployment behavior has not been verified here.
+**Fluffy Mod Manager:** select Dragon's Dogma 2, import the installation ZIP and enable it. The ZIP contains `modinfo.ini`. Use the installation ZIP rather than the source ZIP; the package structure is checked, but manager-specific installation behavior needs manual verification.
+
+No Python or additional Lua libraries are needed at runtime.
+
+## Skills
+
+1. Load a save, press Insert and open **Script Generated UI → DD2 Skill Controller**.
+2. Select **Skills**, choose a vocation and select a skill. Search by name or ID if needed.
+3. Inspect the current states and choose a valid level.
+4. Click **Learn / Set level** or **Forget skill**, review the preview, then click green **Confirm changes**.
+5. Equip the skill again if it was automatically unequipped, and save normally in game.
+
+Ordinary vocation skills synchronize the Arisen and Main Pawn. Arisen-only vocations affect only the Arisen. Missing a required character cancels the whole action. Only levels verified for that particular skill are offered; single-level skills have one acquired level. Acquisition and raw level are tracked separately.
+
+An actual level change or deletion automatically clears all affected skill slots, including saved palettes for other vocations and Warfarer references. The preview lists them. Unchanged acquired levels keep equipment; cleared slots are not automatically re-equipped.
+
+**Learn in bulk** offers the selected vocation or all vocations. Each skill uses its own highest eligible level. Search text does not narrow the batch. Existing higher saved levels are kept by skipping that synchronized skill; use an individual edit for an intentional downgrade. Unverified or unavailable content is listed as a skip.
 
 ## Vocations and JP
 
-Choose **Vocations & JP** in the top **Page** selector. The read-only **Current state** panel always shows both characters’ current vocation, rank and JP. Under **Edit selected vocation**, select **Arisen**, **Main Pawn**, or **Both** and a vocation; the default target is Arisen. This section compares the selected vocation on both characters and contains the editing controls. **Edit JP** is a separate section using the same character target. Each action produces a preview and requires confirmation. Skill editing retains its original synchronization rules.
+Select **Vocations & JP**. **Current state** always shows both characters' current vocation, rank and JP as read-only information.
 
-- **Unlock vocation** grants qualification only. First-change history and JP are retained; the game may charge its normal first-change fee. **Lock vocation** retains skills, equipment and experience. Change away from the vocation in game before locking it. Basic vocations remain available; unverified bitmap mappings disable locking.
-- **Unlock all vocations** unlocks every eligible vocation for the selected targets, independently of the selected vocation. Already unlocked entries stay unchanged. Unsupported/unknown vocations are listed as skips; Arisen-only vocations are skipped for the Pawn. All actual changes use one transaction and preserve ranks, JP, skills and first-change history. Both requires both characters.
-- **Set vocation rank** uses the game's maximum rank and native rank setter. Changing rank sets its corresponding cumulative vocation experience; setting the existing rank keeps experience progress. Character level, JP, skills and augments are protected.
-- Arisen-only vocations cannot be edited for the Pawn. With Both selected, their vocation actions affect only the Arisen and show that scope in the preview.
-- **Set JP** accepts an absolute whole-number balance from 0 to 2147483647. JP belongs to each character, across vocations. Both assigns the same balance to both characters; JP is not filtered by Arisen-only vocations.
+Under **Edit selected vocation**, select **Arisen**, **Main Pawn** or **Both**, then a vocation. The default target is Arisen. The section compares the selected vocation on both characters and contains its editing controls.
 
-Missing required targets cancel the whole action. Arisen-only editing does not require the Main Pawn. Selection/input changes cancel the preview. Snapshots are saved and read back before writing. Failed writes restore exact original experience and all affected targets; failed recovery locks all editing and requires a full save backup restore. If progress data is read only, export diagnostics for the actual layout/signature errors.
+| Action | Behavior |
+| --- | --- |
+| Unlock vocation | Grants qualification; preserves first-change history, rank, JP, skills and equipment. The game's normal first-change fee still applies. |
+| Lock vocation | Removes qualification but retains progress and saved equipment. Change away from the vocation first. Basic vocations cannot be locked. |
+| Set vocation rank | Uses the game's valid rank range and corresponding cumulative vocation experience. Setting the existing rank keeps experience progress. Does not learn skills or change character level or JP. |
+| Unlock all vocations | Unlocks all eligible vocations for the selected character scope, independently of the vocation selector. Already unlocked entries stay unchanged. |
+| Set JP | Sets an absolute whole-number balance from 0 to 2147483647 under **Edit JP**. Both assigns the same value to both characters. |
 
-## Font size
+Arisen-only vocation actions cannot target the Pawn; with Both selected, they affect only the Arisen. Bulk unlocking lists those Pawn entries as skips. JP always follows the character selector. Any missing required target cancels the entire transaction. Unverified qualification mapping disables locking.
 
-Change the default font size in REFramework settings. The Mod's Chinese/English font follows it live, without a separate size setting or font reload. Columns and wrapping use measured glyphs; narrow previews stack vertically.
+## Confirmation, language and font
 
-## Use and language
+Every editing button creates a preview. **These changes have not been applied** means the edit is pending; click green **Confirm changes** to apply or red **Discard changes** to cancel. Changing character, vocation, level, JP input, page or language cancels the old preview.
 
-Load a save, open REFramework with Insert, and expand **DD2 Skill Controller** under **Script Generated UI**. Choose a vocation and skill, inspect the character states, select a level, then use **Learn / Set level** or **Forget skill**. Review the preview and click green **Confirm changes**. The highlighted pending message means nothing has been applied yet. Red **Discard changes** cancels the preview. Save normally in the game afterwards; the Mod does not trigger a save.
+**Language** offers Auto, 中文 and English. Auto reads game text language: Chinese uses the Chinese UI; all other or unknown languages use English. Manual preferences are saved in `reframework/data/DD2SkillStateManager/settings.json`. Vocation/skill names and descriptions are requested from the game in the selected language. The Mod does not change game language or voice settings.
 
-The top **Language** selector offers **Auto (game language)**, **中文**, and **English**. Auto reads the game's text language: either Chinese language maps to the Chinese UI; every other or unknown language maps to English. Chinese display uses Simplified Chinese. If the optional detector is unavailable, choose the language manually.
+Change font size in REFramework settings. The bundled font follows it live, with measured wrapping and a compact preview layout for narrow panels. No separate Mod font-size setting is required.
 
-Vocation names, skill names and descriptions are requested explicitly in English or Chinese through the game's message API. The Mod does not change game language or voice settings. Unresolved game text falls back to the skill enum/ID; refresh the catalogue when needed.
+## Scope and persistence
 
-Manual preferences are saved immediately to `reframework/data/DD2SkillStateManager/settings.json`. Switching language cancels the previous preview, clears the name search and rebuilds text caches. It does not change acquisition rules or make previously excluded levels available.
+The Mod edits active weapon skills and the selected vocation/JP fields. It does not edit core skills, augments, character level, quests or content ownership. Learning an eligible selected skill bypasses its rank, JP purchase and mastery conditions; rank editing does not automatically learn skills. Unowned expansion content is not unlocked.
 
-Skill descriptions, equipped locations, bulk actions and tools are collapsible. Bulk previews show ten character records per page. Name searches do not narrow the bulk operation's vocation/full-catalogue scope.
+**Weapon EX skills remain provided by DLC weapon traits.** EX variants are excluded from normal level selection and bulk grants; weapons and traits retain their native behavior.
 
-## Editing rules
+Actions run once when confirmed and do not continuously override game progression. Changes persist through normal game saving. Uninstalling does not undo saved edits.
 
-- Only active weapon skills are edited. Basic attacks, core skills and passive augments are excluded.
-- Ordinary vocation skills synchronize the Arisen and Main Pawn. If either required character is unavailable, the entire operation is cancelled. Arisen-only vocation skills affect only the Arisen.
-- Explicit learning can bypass vocation rank, JP purchase and master-skill acquisition conditions. It does not grant vocations, spend JP, advance quests or unlock unowned expansion content.
-- Each skill uses its own verified normal levels. Single-level skills keep one level. EX is supplied by DLC weapon affixes and stays entirely game-managed; the Mod does not grant EX or edit weapons/affixes.
-- Presence in the preallocated table does not mean acquired. Native record/context getters verify acquisition and level. Forgetting preserves the table and resets only the selected record to an observed, verified unlearned level.
-- Before forgetting or an actual level change, automatically unequip all affected references on the target characters, including inactive vocation palettes and Warfarer references. The preview lists the affected slots. Changed skills remain unequipped afterwards.
-- An already learned, identical level is a no-op and retains equipment. Explicit forgetting also clears stale equipment references to an already unlearned skill.
-- Bulk learning selects each skill's highest available level. If a character already has a higher saved level, the synchronized skill is skipped rather than downgraded. Use a single explicit operation to lower its level.
-- Buttons act once. The Mod does not continuously overwrite normal learning or equipment behavior.
+## Troubleshooting and recovery
 
-## Recovery, diagnostics and uninstall
+If the catalogue is not ready, open the game's weapon-skill menu once, then use **Tools → Refresh catalogue**. Unresolved names fall back to enum names or IDs. For unavailable characters, read-only data, language issues or failed operations, use **Tools → Export diagnostics**.
 
-Before every actual transaction, write and read back complete learning, equipment and protected-progress snapshots. Unequipping and learning are one transaction. Any failure attempts to restore all target characters' original records and slots, then verifies the complete state. Failed recovery locks further editing; do not save that failed state, and restore a complete save backup.
+Files in `reframework/data/DD2SkillStateManager/`:
 
-Snapshots (`before_*.json`), result logs (`operation_*.json`) and exported diagnostics are in `reframework/data/DD2SkillStateManager/`. Use **Tools → Export diagnostics** for interface, native-contract or language issues. Internal errors remain in logs/diagnostics rather than the interface.
+| File | Purpose |
+| --- | --- |
+| `settings.json` | Language preference |
+| `before_*.json` | Pre-operation snapshots |
+| `operation_*.json` | Operation results |
+| `diagnostic_*.json` | Read-only runtime diagnostics |
+| `writer-lock.json` | Persistent lock after unverified recovery |
 
-JSON snapshots are not complete game saves and have no automatic import function. Close the game and restore the original account's complete `2054970` backup when a full recovery is needed; account for Steam Cloud synchronization. Remove `writer-lock.json` only after restoring and checking the save.
+Before writing, the Mod saves and reads back a snapshot. Failed transactions attempt to restore every target and verify the complete state. If recovery fails, editing is locked: avoid saving that state and restore your full save backup.
 
-To uninstall, close the game and remove only `DD2SkillStateManager.lua`, its module folder and the two `DD2SkillStateManager-CJK` font/license files. Fluffy users can disable the Mod through the manager. Saved learning changes remain after uninstalling; backups/diagnostics can be retained separately.
+JSON snapshots are not complete game saves and cannot be imported. For full recovery, close the game and restore the original account's complete `2054970` directory, taking Steam Cloud synchronization into account. Remove `writer-lock.json` only after restoring and checking the save.
 
-Original code is MIT licensed. The bundled Noto Sans CJK SC font is distributed with its SIL OFL 1.1 license. See `THIRD_PARTY_NOTICES.md` and the included static-check report.
+Before sharing diagnostics, review them for private file paths or character data. Report the game/REFramework versions, action, target, expected result and actual result. Never publish your complete save backup.
 
-## 1.0 validation status
+## Uninstall
 
-The latest 0.4.0 export confirms both actors’ native progress interfaces, complete character/augment/equipment protection and exact experience recovery. Operation logs identify the erroneous rollback; 1.0 removes only the duplicate job-bearing fingerprint and keeps raw protected values and the progress whitelist. Ordinary skill editing has successful game logs and user confirmation.
+Close the game. Remove only `DD2SkillStateManager.lua`, its module directory and the two bundled `DD2SkillStateManager-CJK` font/license files, or disable the Mod through Fluffy. Preferences and diagnostics can be retained separately or removed from this Mod's data folder. Other Mods are unaffected by removing only these files.
 
-Syntax, API references, translations, mutation boundaries and ZIP contents are statically checked. Fixed vocation/JP writes, bulk unlocking and the revised UI still need in-game verification. No automated tests or game simulations were run.
+## Compatibility and license
+
+Reference environment: game `4.0.0.0`, Steam build `25290080`, REFramework `d1461375aee4ec3f313170f8eaad12064eb542d9`, TDB 83. Reflection prechecks disable editing when required contracts cannot be verified.
+
+Core skill editing and automatic unequipping have manual validation. Runtime vocation/JP structures are verified; current vocation/JP edits, bulk unlocking and the revised UI still need manual confirmation. Static reports describe syntax, interfaces and packaging, not proof of in-game behavior.
+
+Original code is MIT licensed. The bundled Noto Sans CJK SC font uses SIL OFL 1.1. See `THIRD_PARTY_NOTICES.md` and the included licenses.

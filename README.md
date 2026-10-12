@@ -1,40 +1,67 @@
 # DD2 Skill Controller
 
-[中文](README-zh-CN.md) · [Installation and usage](mod/README-en.md)
+[简体中文](README-zh-CN.md) · [User guide](mod/README-en.md)
 
-A REFramework Lua Mod for Dragon's Dogma 2 on PC Steam. Edit active weapon skill acquisition and valid levels for the Arisen and Main Pawn, with synchronized transactions, automatic unequipping and native skill discovery.
+A [REFramework](https://github.com/praydog/REFramework) Lua Mod for **Dragon's Dogma 2 on PC Steam**. Manage active weapon skills, vocation qualification, vocation rank and JP for the Arisen and Main Pawn through an English/Chinese ImGui interface.
 
-Version **1.0** fixes a guard fingerprint that rolled back valid vocation/JP changes, adds one-action unlocking of all eligible vocations, and separates current information from selected-vocation editing. Confirmation is green, discard/locking are red, and pending changes remain clearly marked. Vocation qualification, rank and JP support Arisen/Main Pawn/both targeting. Vocation unlocking preserves first-change history; locking requires changing away from the vocation in game. Rank changes retain skill and augment acquisition. The font follows REFramework size settings in real time. English and Chinese are supported. Auto reads the game's text language: Chinese maps to Chinese; all other or unknown languages map to English. A persistent manual override is available at the top. Vocation/skill names and descriptions use explicitly localized game text. Language selection does not change valid-level or acquisition rules. Weapon EX remains game-managed.
+## Features
 
-## Project layout
+- **Precise skill editing:** learn, forget or set an individual skill's valid level. Discover skills from the game, filter by vocation and search by name or ID.
+- **Bulk learning:** learn all skills of the selected vocation or all vocations, using each skill's highest eligible level. Search filters do not narrow bulk actions.
+- **Automatic unequipping:** clear affected skill slots before forgetting or changing an equipped skill, including saved vocation palettes and Warfarer references.
+- **Vocations and JP:** unlock or lock vocations, set vocation rank, unlock all eligible vocations, and set JP for the Arisen, Main Pawn or both.
+- **Review before applying:** preview exact changes, confirm with the green button or discard with the red button. Transactions save snapshots, verify results and attempt full rollback on failure.
+- **Native localization:** automatically use Chinese for Chinese game text settings and English for other languages. Manual selection is saved; font size follows REFramework live.
 
-| Path | Contents |
-| --- | --- |
-| `mod/` | Installable runtime, nine Lua files, licensed font and bilingual documentation |
-| `tools/` | Static checks, packaging, pinned-reference fetching and local deployment |
-| `docs/` | Architecture, localization design and validation status |
-| `references/` | Provenance and pinned hash manifests; downloaded reference data stays local |
-| `dist/` | Generated installation/source ZIPs; ignored by Git |
-| `backups/`, `docs/runtime/` | Private save/script backups and raw game reports; ignored by Git |
-| `.tools/` | Local check dependencies; ignored by Git and not required by the Mod |
+Passive abilities, core skills, character level, quests and content ownership are outside the editing scope. Weapon EX skills remain governed by the game's DLC weapon traits.
 
-The repository root is `DD2_SkillController`. The original project was moved here with 339 file hashes verified. A root MIT license and `.gitignore` are included. No repository has been published; upload this directory as the future GitHub project and keep the ignore rules. Installation ZIPs can be attached separately to releases.
+## Installation
 
-## Build
+Requires REFramework. No additional runtime libraries are needed.
 
-From the project root, with Python 3.12:
+1. Close the game and back up the complete Steam `userdata/<Steam ID>/2054970/` directory.
+2. Merge the installation ZIP's `reframework` folder into the game directory beside `DD2.exe`.
+3. Alternatively, import the installation ZIP into Fluffy Mod Manager with Dragon's Dogma 2 selected, then enable it.
+4. Load a save, press Insert and open **Script Generated UI → DD2 Skill Controller**.
 
-```text
+Use the installation ZIP for playing; the source ZIP is for development. Keep the bundled Chinese font and its license with the Lua scripts. See the [user guide](mod/README-en.md) for recovery and uninstall instructions.
+
+## Usage
+
+**Skills:** select a vocation and skill, choose a level, then click **Learn / Set level** or **Forget skill**. Ordinary vocation skills synchronize both characters; Arisen-only vocations affect only the Arisen. An unavailable required character cancels the action. Changed skills are unequipped and must be equipped again in game.
+
+**Vocations & JP:** the current-state panel always shows both characters. Choose the edit target and vocation in the editing section. Vocation rank, qualification and JP are separate operations. **Unlock all vocations** uses the character target and skips vocations the Pawn cannot use.
+
+Every editing button creates a preview. Read it and click **Confirm changes** to apply; a pending message means the edit has not been applied yet. Changing the selection or choosing **Discard changes** cancels the preview. Save normally in game afterwards; the Mod does not trigger saves.
+
+## Compatibility and validation
+
+The reference environment is game `4.0.0.0`, Steam build `25290080`, REFramework commit `d1461375aee4ec3f313170f8eaad12064eb542d9`, TDB 83. Reflection checks disable unsupported editing paths when contracts cannot be verified.
+
+Core skill editing and automatic unequipping have manual validation. Vocation/JP structures are verified against exported runtime data; current vocation/JP writes, bulk unlocking and the revised interface still need in-game confirmation. Static checks do not prove game behavior. See the [validation checklist](docs/RUNTIME_VALIDATION.md).
+
+## Development
+
+With Python 3.12, run from the repository root:
+
+```powershell
 python -m pip install --target .tools/python -r tools/requirements-static.txt
 python tools/fetch_references.py
-python tools/static_check.py
 python tools/build.py
 ```
 
-The checker parses/compiles Lua without executing Mod code, simulating a game environment or running a test suite. It checks module/API references, localization keys/format placeholders, UTF-8, mutation boundaries and package inputs. Existing local runtime reports provide additional signature evidence; a clean checkout records their absence explicitly.
+The build performs static checks and generates installation/source ZIPs plus `SHA256SUMS.txt` in `dist/`. It does not launch the game, execute the Mod or install it. See [development](docs/DEVELOPMENT.md) and [contributing](CONTRIBUTING.md).
 
-Third-party reference code and data are downloaded by pinned hashes for local research. They are not redistributed in either ZIP. The bundled Noto CJK font retains its OFL license. Private saves, reports, dependencies and historical archives are excluded from release packaging and Git tracking.
+| Directory | Contents |
+| --- | --- |
+| `mod/` | Installable Lua modules, licensed font and bilingual user guides |
+| `docs/` | Architecture, vocation design, localization and validation |
+| `tools/` | Static checks, packaging, reference retrieval and local utilities |
+| `references/` | Pinned source URLs, versions and SHA-256 manifests |
+| `dist/` | Generated release archives; ignored by Git |
 
-Local deployment requires a closed game and verifies the installed previous version before replacing only this Mod's scripts. New modules are added only when the destination is absent. Save backup tools copy complete local save directories and never edit the originals or Steam Cloud.
+Local dependencies, downloaded references, backups and raw runtime data are excluded from Git and release packages.
 
-Ordinary editing and an automatic-unequip deletion have successful game logs. The latest 0.4.0 diagnostic confirms both actors’ progress interfaces and protection/recovery layouts. Fixed 1.0 writes, bulk unlocking and the revised interface still require in-game confirmation. See [runtime validation](docs/RUNTIME_VALIDATION.md), [localization](docs/LOCALIZATION.md), [architecture](docs/ARCHITECTURE.md) and [sources](references/SOURCES.md).
+## License and credits
+
+Original code is [MIT licensed](LICENSE). The bundled Noto Sans CJK SC font uses SIL OFL 1.1. Reference projects, pinned versions and licenses are listed in [sources](references/SOURCES.md) and [third-party notices](mod/THIRD_PARTY_NOTICES.md).

@@ -405,6 +405,26 @@ def run() -> dict:
         ".tools/", "backups/", "dist/", "docs/runtime/", "references/*", "!references/manifest.json")))
     check("仓库根许可证与 Mod 一致", (ROOT / "LICENSE").read_bytes() == (MOD / "LICENSE").read_bytes())
 
+    # Documentation checks read text/links only; they never execute sample commands.
+    documents = [ROOT / name for name in ("README.md", "README-zh-CN.md", "CONTRIBUTING.md",
+        "docs/ARCHITECTURE.md", "docs/DEVELOPMENT.md", "docs/PROGRESS.md", "docs/LOCALIZATION.md",
+        "docs/RUNTIME_VALIDATION.md", "references/SOURCES.md", "mod/README-en.md",
+        "mod/README-zh-CN.md", "mod/THIRD_PARTY_NOTICES.md")]
+    for path in documents:
+        relative = path.relative_to(ROOT).as_posix()
+        raw = path.read_bytes()
+        document = raw.decode("utf-8", errors="strict")
+        check("项目文档 UTF-8: " + relative, not raw.startswith(b"\xef\xbb\xbf") and "\ufffd" not in document)
+        for target in re.findall(r'\[[^\]]+\]\(([^)]+)\)', document):
+            if target.startswith(("https://", "http://", "#", "mailto:")):
+                continue
+            local = target.split("#", 1)[0]
+            resolved = (path.parent / local).resolve()
+            check("项目文档链接: " + relative + " -> " + local,
+                  resolved.is_relative_to(ROOT.resolve()) and resolved.exists())
+    build_source = (ROOT / "tools/build.py").read_text(encoding="utf-8")
+    check("源码包包含贡献指南", '"CONTRIBUTING.md"' in build_source)
+
     allowed_extensions = {".lua", ".md", ".ini", ".txt", ".otf"}
     hashes = {}
     for path in sorted(MOD.rglob("*")):
@@ -446,19 +466,16 @@ def run() -> dict:
              "| 范围 | 结果 |", "| --- | --- |",
              f"| {len(trees)} 个 Lua 文件：UTF-8、Lua 5.4 编译、AST 解析 | {'通过' if not errors else '见失败项'} |",
              "| 模块引用和导出、回调、REFramework API/对象方法与已安装源码版本核对 | 见逐项 JSON 结果 |",
-             "| DD2 序列化字段与 2026-10-10 类型资料核对 | 见逐项 JSON 结果 |",
-             f"| 最新已导出报告的 {runtime_signatures} 个实际方法签名与新契约核对 | {'通过' if runtime_signatures else '未提供本机原始报告'} |",
+             "| DD2 序列化字段与固定版本类型资料核对 | 见逐项 JSON 结果 |",
+             f"| 可用运行时资料的 {runtime_signatures} 个实际方法签名核对 | {'通过' if runtime_signatures else '未提供本地运行时报告'} |",
              "| 游戏写入入口分层、UI 无游戏访问、快照先于事务 | 见逐项 JSON 结果 |",
              "| 字体/OFL、参考源码哈希、安装树、文本编码、许可证与元数据 | 见逐项 JSON 结果 |",
-             "| 0.1.3 普通编辑 | 用户已确认生效；四份成功日志见运行时报告 |",
-             "| 0.2.0 已装备删除与重新获取 | 新日志确认成功自动卸下一槽并同步修改 |",
-             "| 0.3.0 中英界面与游戏文本、自动识别 | 静态字典/API核对；实际显示待进游戏确认 |",
-             "| 1.0 职业资格、等级、JP、批量解锁与界面 | 0.4.0 新诊断确认完整结构；误回滚已修复；修改后行为待游戏复核 |", "",
+             "| 项目文档 UTF-8、相对链接与源码包文档入口 | 见逐项 JSON 结果 |", "",
              "## 写入入口审查", "", *["- `" + site + "`" for site in mutation_sites], "",
              "技能写入集中在 access 与技能事务；职业/JP 原生写入和资格单个位写入集中在 progress_access，控制器只有一个共享执行入口。装箱 Int32 数组仅在异常恢复中赋值，不能用 Lua 数字或裸偏移写入。职业操作保护人物等级、成长属性、被动能力及技能装备；首次转职历史、任务和内容所有权不主动修改。", "",
              "## 限制", "",
              "静态 API 核对确认符号在所调查 REFramework 绑定中存在，不证明任意游戏对象均可调用，也不证明游戏 TDB 中方法返回类型。真实签名由运行时预检和诊断提供。字段资料为序列化结构，不能替代运行时集合签名。", "",
-             "三次只读报告确认本机获取语义及完整状态；0.1.3 的四份成功日志和 0.2.0 的两份新成功日志已留存。后者确认主随从一槽自动卸下及双方删除/重新学习。显式 get(Guid, via.Language) 已从现有反射资料核对；自动 GUI 文字语言 getter 在运行时按签名预检，不可用时回退英文并允许手选。中英资源、格式参数及引用仅作 AST 静态检查，没有执行 Lua、游戏或模拟测试。本轮语言显示、保存偏好和自动检测仍需实际显示确认；恢复失败/保存重启等未覆盖场景仍见运行时报告。", "",
+             "运行时资料仅作为已导出签名与字段的证据，不将接口可用视为写入成功。语言显示、字体缩放、修改结果、恢复边界和保存重启须分别人工核验；当前范围见源码 docs/RUNTIME_VALIDATION.md。", "",
              "ZIP 文件树、压缩流及包内哈希检查由打包工具单独写入 PACKAGE_CHECK_REPORT.md。源码的完整逐项结果与哈希见 static-results.json。"]
     if errors:
         lines += ["", "## 失败项", "", *["- " + error for error in errors]]

@@ -1,131 +1,64 @@
-# 运行时验收状态
+# Validation
 
-2026-10-12：用户已确认普通技能编辑正常生效，随后 0.2.0 两份新日志确认已装备技能自动卸下、同步删除及重新学习成功。本次交付为 **0.4.0 职业/JP 管理与字体适配**；新功能的保护数据、资格映射、实际修改与字体显示尚未在游戏中确认。
+Static results and in-game behavior are recorded separately. A passing build proves the inspected syntax, references and archive contents; it does not prove every native game operation or save-persistence scenario.
 
-## 已有证据
+## Reference environment
 
-| 版本 / 资料 | 已确认结果 |
+| Component | Reference |
 | --- | --- |
-| 0.1.0 首次只读诊断 | TDB 83；静态场景 getter；角色/Human 路径；全技能预置表含 ID 0 哨兵，存在行不等于已获取 |
-| 0.1.1 第二次只读诊断 | 120 项主动技能、10 职业、中文文本；双方 240 条非哨兵记录的原生状态/存储等级一致，本机 Lv0 未获取、Lv1/Lv2 已获取 |
-| 0.1.2 第三次只读诊断 | 双方完整状态、66 个保存槽和 10 项职业经验读取成功；严格解装箱 Int32；120 项归属有效；EX 与普通变体分离 |
-| 0.1.3 用户反馈 | 用户确认编辑正常生效，已完成自己安排的功能验证 |
-| 0.1.3 四份操作日志 | 四次 success=true、recovery_failed=false；单项普通获取/等级设置及当前职业批量确已执行 |
-| 0.2.0 两份新操作日志 | 主随从一槽自动卸下，双方同步删除 #103；随后双方重新学习 Lv1，均 success=true |
-| 0.3.0 既有实现 | 中英字典、明确语言的游戏文本、可选自动检测、保存手动偏好及源码迁移；静态核验完成，实际语言显示待确认 |
+| Platform | PC Steam, Dragon's Dogma 2 |
+| Game version | `4.0.0.0` |
+| Steam build | `25290080` |
+| REFramework | `d1461375aee4ec3f313170f8eaad12064eb542d9` |
+| TDB | 83 |
 
-四份 0.1.3 结果文件及对应 before 文件已从游戏数据目录复制到本地 `docs/runtime/`，未修改原文件：
+The Mod resolves exact runtime signatures and disables unsupported editing paths instead of guessing offsets. Other builds need their own runtime confirmation.
 
-| 时间 / operation 文件 | 操作 | 结果日志 |
-| --- | --- | --- |
-| 12:30:48 / `operation_20261012_123048_table0000000244125990_2.json` | 技能 #103 设置 Lv1，双方同步 | 成功，2 条角色记录 |
-| 12:31:43 / `operation_20261012_123143_table0000000244125990_4.json` | 技能 #102 设置 Lv1，双方同步 | 成功，2 条角色记录 |
-| 12:31:49 / `operation_20261012_123149_table0000000244125990_6.json` | 当前职业战士批量学习，逐项最高有效等级 | 成功，2 条角色记录；#12 既有等级更高，按规则跳过 |
-| 12:32:00 / `operation_20261012_123200_table0000000244125990_8.json` | 技能 #12 明确设置 Lv1，双方同步 | 成功，2 条角色记录 |
+## Evidence and current limits
 
-日志确认这些具体操作；没有单独的保存重进、失败回滚或未拥有内容记录，不能从日志推断这些场景均已覆盖。用户整体功能确认另行保留。
+| Area | Evidence / status |
+| --- | --- |
+| Lua, module/API references, localization and write boundaries | Checked by the static build gate; generated reports hold exact results. |
+| Installation/source archives | Entry tree, CRC, duplicate names and SHA-256 checked by packaging. |
+| Core skill editing | Confirmed through manual play and successful operation logs. |
+| Automatic unequipping | A deletion with automatic slot clearing and synchronized re-learning is confirmed. Other palette/reference combinations still need explicit coverage. |
+| Acquisition semantics and native skill levels | Cross-checked against exported per-record native/saved state. |
+| Vocation/JP and recovery structures | Both actors' exported native capabilities, qualification mapping, cumulative experience and protection collections are readable and consistent. |
+| Current vocation qualification/rank/JP writes and bulk unlock | Manual acceptance is still pending; structure/signature evidence alone is not a successful-write result. |
+| Language, font and revised layout | Static keys/bindings checked; rendering, live scaling and preference persistence need manual confirmation. |
+| Recovery edge cases and save persistence | Not fully covered; no forced failure is claimed. |
+| Fluffy Mod Manager | Installation layout checked; manager-specific deployment requires manual confirmation. |
 
-另从游戏数据目录只读复制四个 0.2.0 before/operation 文件到 `docs/runtime/`，来源和副本哈希一致：13:06:19 的 `operation_20261012_130619_table0000000225DD0210_2.json` 确认删除技能 #103，2 条角色记录、自动卸下主随从战士槽位 1；13:06:32 的 `operation_20261012_130632_table0000000225DD0210_4.json` 确认双方重新学习 Lv1，2 条角色记录、不再卸装。均成功且没有恢复失败。这提供了 setSkill(None) 的一个实际成功场景，不推断全部装备/失败场景已通过。
+The build performs no automated gameplay tests, game emulation or Mod execution. Private raw exports and backups remain local and are excluded from Git/release packages.
 
-原始只读诊断：
-- `docs/runtime/diagnostic-0.1.0-20261012-110405.json`
-- `docs/runtime/diagnostic-0.1.1-20261012-114344.json`
-- `docs/runtime/diagnostic-0.1.2-20261012-121025.json`
+## Manual acceptance checklist
 
-这些报告中的 `getSkillID(JobEnum, SkillSlot)`、`getEquipList(JobEnum)` 和返回 Boolean 的 `setSkill(JobEnum, SkillID, SkillSlot)` 已反射确认。0.2.0 的新日志证明一个自动卸装场景成功。第三次反射报告还确认 `via.gui.message.get(Guid, via.Language)` 返回 String 的静态重载；0.3.0 用它请求中英文本。GUI 当前文字语言 getter 未在现有报告中导出，因此运行时严格核验，不可用时回退英文且可手选。
+Back up the complete save before write verification. Review each preview and explicitly confirm it. For reversible checks, record original values and restore them through the normal UI afterwards.
 
-## 0.3.0 语言验收
+| Case | Expected result |
+| --- | --- |
+| Learn/forget/set a selected ordinary skill | Both required characters match the request; unrelated learning/slots do not change. |
+| Single-level/master/expansion skills | Only verified ordinary grades are offered; ownership rules hold; weapon EX remains game-managed. |
+| Equipped skill change | Only previewed references clear, including other vocation palettes/Warfarer; unchanged grades retain equipment. |
+| Bulk skill learning | Each skill uses its own highest eligible grade; higher saved grades and unavailable content are skipped as specified. |
+| Arisen/Pawn/Both progress targets | Only the actual previewed targets change; missing required targets cancel the whole operation. |
+| Arisen-only vocation | Pawn-only editing is disabled; Both single-vocation edits affect only the Arisen. |
+| Qualification and all-vocation unlock | Only eligible qualification bits change; ranks, JP, history, skills and equipment remain intact. |
+| Locking | Active/basic vocations cannot be locked; locked vocation progress and saved equipment are retained. |
+| Rank increase/decrease/same rank | Native rank is correct; same-rank experience progress is preserved; no character-level, JP or skill side effects. |
+| JP integer/range/normal spending | Valid absolute balances read back exactly; invalid inputs do not write; normal game consumption remains functional. |
+| Preview expiry and discard | Changed selection/state cancels old confirmation; discarded edits produce no write. |
+| English/Chinese, large font, narrow panel | Controls remain legible; game text matches the chosen language; font tracks REFramework and stacks do not leak. |
+| Normal save and restart | Accepted edits persist through the game's ordinary saving mechanism. |
 
-1. 启动游戏、进入存档，展开本 Mod。无需修改任何技能。
-2. 顶部选择 English，检查按钮、双方状态、职业/技能名称和说明为英文；再选择中文检查对应中文。
-3. 选择手动语言并重载脚本或重启，检查偏好保留。切回自动时，中文游戏应显示中文；其他语言/未知接口应为英文。接口不可读仍可手选。
-4. 在“工具 / Tools”导出诊断可记录检测源、枚举、有效 UI 语言及文本目录。新语言效果尚未自动或人工验证。
+## Diagnostic workflow
 
-未要求脚本自动操作游戏、启动游戏或制造失败。没有执行自动化测试、模拟 Lua 游戏环境或完整测试套件。
+Load a save, open the relevant page and choose **Tools → Export diagnostics**. Relevant files live under game `reframework/data/DD2SkillStateManager/`:
 
-## 新增功能验收矩阵
+- `diagnostic_*.json`: read-only signatures, catalogue, actor state, qualification mapping, progress/recovery contracts and font information.
+- `before_*.json`: complete pre-operation snapshot, not an importable game save.
+- `operation_*.json`: requested scope, planned changes, result and recovery status.
 
-| 项目 | 预期 | 当前状态 |
-| --- | --- | --- |
-| 删除当前已装备技能 | 自动卸下引用槽后同步删除 | 0.2.0 日志确认主随从一槽卸下、双方删除成功 |
-| 升级 / 降级已装备技能 | 自动卸下后设置等级，不直接保留旧装备缓存 | 待本次实测 |
-| 双方同时装备同一技能 | 全部相关槽一起卸下，两方状态一致 | 待本次实测 |
-| 非当前职业和龙选者引用 | 每个引用槽都纳入预览及卸装 | 待本次实测 |
-| 同等级无操作 | 保持装备、没有学习写入 | 静态流程已检查；待实测 |
-| 删除异常未获取但已装备技能 | 仅清除该异常引用槽，不变更其他记录 | 静态流程已检查；需相应存档场景 |
-| 两个批量按钮 | 仅实际变化的技能自动卸下，其余保留；每项自身最高等级 | 待本次实测 |
-| 失败恢复 | 先恢复学习，再原生恢复全部原槽，核验双方整体状态 | 静态流程已检查；未人为诱发游戏失败 |
-| 简化界面 | 选择、当前状态、设置、确认依次显示；批量/工具折叠，10 条分页；不显示技术堆栈 | API 静态核对通过，实际显示待确认 |
-| 正常保存重启 | 学习状态和空槽持久化 | 待本次实测 |
-| EX | 不修改武器、词条或 EX 获取来源 | 目录/写入范围静态核对；沿用已明确规则 |
-| Fluffy 安装卸载 | 只操作本 Mod 文件 | 包结构已核验，管理器人工验收未提供 |
-| 中英文切换 | 控件、状态、跳过原因和游戏文本对应所选语言 | 字典/API 静态检查通过；实际显示待确认 |
-| 自动检测和其他语言回退 | 中文为中文，其他/未知为英文，仍允许手动选择 | 类型资料及回退逻辑静态核验；实际检测待确认 |
-| 语言偏好重载 | 选择保存在 settings.json，重启保留 | 保存入口静态核验；实际重载待确认 |
+Compare the recorded before/after values with the native/saved field checks; do not infer success from a preview or interface availability. If an operation fails, retain its result and matching snapshot. Review private data before sharing excerpts, and include the game/REFramework/Mod versions and exact action. Never publish full save backups.
 
-## 备份与安装
-
-游戏退出时已经创建完整存档备份 `backups/saves-before-edit-20261012-122022-929772/`，包含两个本机 Steam 账号的完整 `2054970` 目录，共 16 个文件；来源和副本哈希一致。原始存档和云端未修改。
-
-本次再次在游戏退出时备份当前存档，路径为 `backups/saves-before-edit-20261012-125935-663119/`。两个账号共 16 个文件，复制前后来源与副本哈希一致，保留此前备份；没有修改原始存档或云端。
-
-0.2.0 已部署到 `F:\SteamLibrary\steamapps\common\Dragons Dogma 2`。部署先核验旧六个 Lua 文件与 0.1.3 原源码包一致，再备份到 `backups/scripts-0.1.3-20261012-125947-742881/`，最后更新本 Mod 文件并逐文件回读 SHA-256 与项目源码一致。其他 Mod、字体、游戏诊断和存档没有被此次脚本部署改写。下次启动即可使用，无需重新解压。原始诊断、脚本/存档备份不打入发布 ZIP。
-
-本次将整个开发项目迁到 `D:\WorkD\DD2Modding\DD2_SkillController`，迁移时核验 339 个文件，旧备份及报告完整保留。根 `.gitignore` 排除存档/脚本备份、原始运行数据、依赖、历史压缩包及下载资料；它们不会随 GitHub 源码或源码 ZIP 发布。
-
-0.3.0 已在游戏退出时部署七个 Lua 文件，逐文件回读与源码 SHA-256 一致。原 0.2.0 六个脚本备份在 `backups/scripts-0.2.0-20261012-133553-053122/`，新增 i18n.lua 仅在安装目标不存在时添加。未操作其他 Mod、字体、游戏诊断或存档。下次启动即可使用顶部语言选择；没有为了本次验证启动或操作游戏。
-
-
-## 0.4.0 最小运行时协作
-
-本机已在游戏退出状态下从 0.3.0 更新至 0.4.0，九个 Lua 文件逐项与安装源核验一致。旧脚本备份为 `backups/scripts-0.3.0-20261012-145008-723039/`。修改验收前另复制完整本机存档到 `backups/saves-before-edit-20261012-145127-992729/`，两个账号共 16 个文件，全部哈希一致。部署没有改其他 Mod、字体、诊断或原始存档；存档备份只复制本地文件，没有操作云端。
-
-先只读核验，不要求先改职业或 JP：
-
-1. 启动并进入存档，展开“DD2 技能与职业管理 / DD2 Skill Controller”，切到“职业与 JP / Vocations & JP”。
-2. 在 REFramework 设置中改变字号，检查本 Mod 同步变大/变小；切换中文与 English，检查两页正常显示。
-3. 在“工具 / Tools”点“导出诊断 / Export diagnostics”，告知已导出。新文件在游戏 `reframework/data/DD2SkillStateManager/diagnostic_*.json`，schema 5 / version 0.4.0。
-
-诊断导出 qualification_mapping、各角色 vocation_progress、character_and_augment_guards、数组恢复方法及 font_api。本地核验新结构后再做修改验收。若按钮只读，导出的具体字段/签名错误用于修正适配，不猜偏移。
-
-| 验收 | 预期 | 状态 |
-| --- | --- | --- |
-| 觉醒者、主随从、双方 | 仅选中对象改变；双方设置相同目标值 | 待游戏验证 |
-| 主随从缺席 | 觉醒者操作可用；需要随从的操作整体取消 | 待游戏验证 |
-| 专属职业 | 主随从禁止；双方选择时职业操作只影响觉醒者，JP 仍按角色选择 | 待游戏验证 |
-| 解锁/锁定 | 只修改资格，首次转职历史/JP/技能/经验保留 | 待游戏验证 |
-| 当前职业与基础职业锁定 | 提示先转职；基础职业不强制锁定 | 待游戏验证 |
-| 升级/降级 | 原生等级准确，其他职业经验、人物等级及全部技能/被动记录不变 | 待游戏验证 |
-| 同级设置 | 无写入；原等级内经验进度保留 | 待游戏验证 |
-| JP 0、正常整数、无效输入 | 回读目标一致，无效值不进入写入流程 | 待游戏验证 |
-| 预览后变化与恢复 | 状态变化取消确认；失败恢复完整原始经验，不仅恢复等级 | 静态路径审查；未人为诱发游戏失败 |
-| 中英、大字号、窄面板 | 字号实时跟随；预览纵向排版、列宽与换行按当前字体 | 待游戏验证 |
-| 保存重进 | 职业资格、等级与 JP 按游戏正常存档持久化 | 待游戏验证 |
-| 原技能功能 | 双方同步及已装备自动卸装继续生效 | 0.4.0 回归待验证 |
-
-没有运行 Mod 仿真、自动化游戏测试或完整测试套件。0.4.0 的静态结果与真实游戏结果分开记录。
-
-## 1.0：本次导出、故障与交付
-
-已读取并保留最新 schema 5 / 0.4.0 的三份诊断（15:02:40、15:04:16、15:06:56）、两份操作日志与对应修改前快照。私有原始报告在 docs/runtime，不进入 Git / 发布 ZIP。
-
-15:06:56 报告确认：双方资格、等级、JP、恢复能力及人物 / 被动 / 装备保护均可读；唯一位图候选 shift=1，对应 ID-1 位。双方最高等级由接口返回 9，累计经验与各职业 getter 一致；觉醒者 JP=999799，主随从 JP=1520099。角色当前均为 Job01。随从 Job07 的原始额外资格位仍保留，不因此允许其使用专属职业。
-
-两份 0.4.0 操作日志分别请求觉醒者 Job07 等级 9→1 和 JP 999799→999999。两次均在最后 guard 校验失败且 recovery_failed=false，恢复后诊断保留原值；未记录为成功。根因是受保护技能状态中仍携带含职业字段的旧衍生指纹。1.0 去掉这一个重复指纹，按原始字段保护技能 / 人物 / 被动 / 装备，职业数据继续独立白名单核验。修复尚未在游戏执行，不能把原版恢复成功当作修复后修改成功。
-
-本次新增全部职业解锁、双角色只读当前信息、独立所选职业编辑、JP 编辑、局部按钮配色及两处待确认提示。诊断 / 操作文件使用 schema 6 / version 1.0；历史文件继续保留。
-
-### 最小人工复核
-
-1. 进入存档，确认顶部“当前状态”显示双方实际职业 / 等级 / JP，“编辑所选职业”显示双方该职业的资格和等级。
-2. 选择觉醒者，将非当前职业等级下调一档并点绿色“确认修改”；将 JP 设为相邻整数并确认，检查回读值。可立即按原值改回；人物等级、技能和被动不得变化。
-3. 对一个非当前高级职业锁定后再解锁；也可锁定后用“解锁全部职业”预览并确认。双方范围下应列出随从专属禁用职业的跳过项，已有职业等级 / JP / 技能保持原状。放弃仅取消预览。
-4. 在 REFramework 改字号、切中英文，检查配色、提示和窄面板；在“工具”导出诊断，再告知已导出，以便核验操作日志。普通技能自动卸装回归及正常保存重进另按验收表确认。
-
-1.0 修改行为、批量资格与新界面目前待游戏复核；语法 / 引用 / API / 翻译 / 差异白名单 / 包结构仅作已授权静态检查。没有创建或运行自动化测试、游戏模拟或完整测试套件。
-
-### 1.0 本机部署
-
-用户已退出游戏。已核验已安装 0.4.0 九个 Lua 文件与原源码 ZIP 一致，备份到 backups/scripts-0.4.0-20261012-153242-554776，再更新至 1.0 并逐文件回读 SHA-256。原技能访问 / 目录 / 技能事务、职业原生适配和唯一控制器源码未变；本次仅修改职业事务、界面、本地化和诊断版本。其他 Mod、字体及历史诊断未改动。
-
-修改验收前完整本机存档复制到 backups/saves-before-edit-20261012-153241-975276，两个账号共 16 个文件，来源 / 副本哈希全部一致；原始存档和 Steam Cloud 未修改。无需再次手动解压，下一次启动即可使用 1.0。
+If recovery is unverified, restore a complete save backup before saving again. See the [English user guide](../mod/README-en.md) or [中文使用指南](../mod/README-zh-CN.md) for recovery and removal of the persistent editing lock.

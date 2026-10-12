@@ -53,7 +53,7 @@ def main():
                 if path.name in {"package-manifest.json", "PACKAGE_CHECK_REPORT.md"}:
                     continue  # Avoid stale reports and recursive archive hashes.
                 source_files.append((path, path.relative_to(ROOT).as_posix()))
-    for name in ("README.md", "README-zh-CN.md", "LICENSE", ".gitignore", "references/SOURCES.md", "references/manifest.json", "references/font-manifest.json"):
+    for name in ("README.md", "README-zh-CN.md", "CONTRIBUTING.md", "LICENSE", ".gitignore", "references/SOURCES.md", "references/manifest.json", "references/font-manifest.json"):
         source_files.append((ROOT / name, name))
     source = package(source_files, dist / f"DD2SkillStateManager-{version}-source.zip")
     manifest = {"version": version, "runtime_verified": False, "archives": [installer, source]}
@@ -62,10 +62,9 @@ def main():
               "| 文件 | 条目数 | 字节 | SHA-256 |", "| --- | --- | --- | --- |"]
     for item in (installer, source):
         report.append(f"| {item['file']} | {len(item['entries'])} | {item['bytes']} | `{item['sha256']}` |")
-    report += ["", "安装包包含 reframework/autorun、完整模块、CJK 字体及 OFL、modinfo.ini、MIT 和中文说明。无诊断数据、参考源码、Python 或检查库。", "",
-               "源码 ZIP 包含原创项目与开发工具；外部参考源码/资料在本地 references，未混入发布包。可按来源清单下载。", "",
-               "源码项目位于 DD2_SkillController，提供根许可证和 Git 忽略规则；私有存档、运行时报告、下载资料及本地库均不进入源码 ZIP。中英说明随包提供。", "",
-               "Fluffy 的文件布局静态符合根目录 modinfo.ini + reframework 结构，管理器实际部署尚未人工验证。0.1.3 普通编辑及 0.2.0 一槽自动卸装已有成功日志；1.0 已修复 0.4.0 误回滚并增加批量解锁/提示/配色；修复后职业/JP 行为和新界面待游戏复核，见 RUNTIME_VALIDATION.md。"]
+    report += ["", "安装包包含 reframework/autorun、完整模块、CJK 字体及 OFL、modinfo.ini、MIT 与中英使用指南。无诊断数据、参考源码、Python 或检查库。", "",
+               "源码 ZIP 包含原创项目、开发工具、贡献指南和来源清单；私有存档、原始运行时数据、下载资料及本地依赖均不进入发布包。外部参考资料按固定 URL / 哈希获取。", "",
+               "Fluffy 文件布局符合根目录 modinfo.ini + reframework 结构；管理器具体部署、游戏内行为与持久化须人工验证。源码的当前验证范围见 docs/RUNTIME_VALIDATION.md；包结构通过不代表游戏行为通过。"]
     (ROOT / "docs/PACKAGE_CHECK_REPORT.md").write_text("\n".join(report) + "\n", encoding="utf-8")
     (dist / "SHA256SUMS.txt").write_text("\n".join(f"{item['sha256']}  {item['file']}" for item in (installer, source)) + "\n", encoding="utf-8")
     print(json.dumps({"archives": [{key: item[key] for key in ("file", "bytes", "sha256")} for item in (installer, source)]}, ensure_ascii=False))

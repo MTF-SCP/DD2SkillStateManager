@@ -1,55 +1,57 @@
-# 实现结构与边界
+# Architecture
 
-| 模块 | 职责 |
+## Modules
+
+| Module | Responsibility |
 | --- | --- |
-| 主入口 | 注册唯一更新回调、渲染回调、对象生命周期、请求队列和持久化修改锁 |
-| access | 按类型、参数、返回值、静态性反射访问；集合读取、全部装备槽与保护数据；最小写入和回滚接口 |
-| catalog | 扫描游戏 GUI 主动技能参数；职业/技能/真实等级交叉核验；本地化、内容归属和目录戳 |
-| operations | 单项与批量统一预检、精确差异、写入回读与双方回滚 |
-| ui | 中英 ImGui，技能与职业/JP 页面、动态字号和响应布局；只提交请求 |
-| progress | 独立职业/JP 规格、角色范围、完整预检、差异白名单和回滚 |
-| progress_access | 职业原生接口、唯一资格位图映射、人物/被动/武器护甲保护、装箱经验恢复 |
-| diagnostics | 局部失败仍可导出的只读结构/签名报告；快照 JSON 编码、写盘和回读核验 |
-| i18n | 纯中英显示字典、格式化、结构化状态/跳过原因；不访问游戏对象 |
+| `DD2SkillStateManager.lua` | Single update/render callbacks, lifecycle, requests, preview/backup dispatch and persistent write lock |
+| `access` | Reflected type/method/field contracts, actor access, collections, skill slots and minimal writes/recovery |
+| `catalog` | Active-skill parameter discovery, vocation ownership, valid levels, content checks and localized text |
+| `operations` | Individual/bulk skill preparation, allowed differences, automatic unequipping and rollback |
+| `progress` | Vocation/JP requests, character scope, complete preflight, change whitelist and rollback |
+| `progress_access` | Native vocation interfaces, qualification mapping, character/augment/equipment guards and exact experience recovery |
+| `ui` | Portable-data ImGui rendering, page/selection state, responsive font/layout and request submission |
+| `i18n` | English/Chinese presentation keys, formatting and structured notices; no game access |
+| `diagnostics` | Read-only reflection reports, portable snapshot encoding, write/readback verification and logs |
 
-目录缓存只保存 Lua 值和已解析文本，不保留组件/角色引用。更新阶段每 0.5 秒检查存档阶段、场景和角色身份；目录不可用时每 3 秒重试。界面关闭后减少状态采样。反射类型描述缓存跨场景有效；脚本重载清空模块缓存，旧回调通过 session.active 自动停止。
+## Lifetime and dispatch
 
-UI 按钮请求在 `UpdateBehavior` 的前置回调处理。预览只保存普通 Lua 值、规格和全状态指纹；确认重新建立目录并重新取得双方对象。磁盘快照写入成功、逻辑 JSON 回读一致后，再次重新取得角色并比对指纹，最后执行原生写入。方法通过继承链查找，拒绝不匹配或歧义的重载。
+Cross-frame catalogue/UI caches contain Lua values and text, not actor or component references. Reflection descriptors are cached by type and signature. Scene/save/actor changes invalidate portable state. Script reload clears module caches and deactivates old callbacks through the session flag.
 
-2026-10-12 首次运行时诊断证明 `EnabledCustomSkills` 是全技能预置表，包含 ID 0 哨兵和大量 Lv0 行，因此记录存在不能表示已获取。0.1.1 读取每条记录的 `get_IsEnableProp()`，并与上下文 `isCustomSkillEnable(id)` 交叉核对。原始等级与获取布尔值独立保存；全部行（含哨兵、未获取行）都进入范围外差异核验。
+UI buttons submit requests. The single `UpdateBehavior` pre-callback reacquires actors and handles both skill and progress transaction modules through `specification / prepare / backup / execute`. Native methods are resolved across inheritance by exact parameters, return type and staticness; ambiguity or mismatch disables the affected path.
 
-第二次诊断已确认双方 240 条非哨兵记录的获取布尔值及原始等级与原生 getter 一致；本机 Lv0 为未获取，Lv1/Lv2 为已获取。0.1.2 处理 `SystemArray.get_element` 的装箱 Int32/UInt32：只接受严格类型和无参 ToString 返回的十进制整数，不使用载荷偏移或对象地址解释整数。此转换用于职业经验保护读取；完整数组仍进入保护指纹。
+## Transaction lifecycle
 
-新获取和升级调用核验后的 `setCustomSkillEnable`；降级只改选定记录 `Level`；删除保留行，重置到原生采样确认的唯一未获取等级。等级语义根据实际原生属性采样建立，缺少证据或同一等级出现冲突时拒绝修改，不猜测零的含义。学习等级需要在主动参数中存在，且原生属性已经确认其为已获取等级。
+1. Build a request from the current catalogue and character rules.
+2. Preflight all targets, recovery primitives and protected state; create a portable preview and fingerprint.
+3. On confirmation, reacquire objects and compare the fresh state with the preview.
+4. Save a complete pre-operation snapshot and verify its JSON readback.
+5. Reacquire once more after disk I/O and check the fingerprint before writing.
+6. Execute only planned changes, read back native/saved values and verify all out-of-scope data.
+7. On failure, restore every target and verify recovery. Unverified recovery persists a global editing lock and exports diagnostics.
 
-`RemoveAt` / `Insert` 仅用于异常结构变动时重建回滚，正常遗忘绝不移除行。普通等级回滚只恢复变化字段，不清空整个表。通过 ID 索引快速查找时先交叉核验候选行的真实 ID，失败再精确遍历；这不参与技能发现或归属推测。批量过程也不再为每条写入反复采样全表。技能事务未调用职业购买、任务、JP、存档或职业资格接口；0.4.0 职业事务单独管理资格、职业等级和 JP。两类事务均不使用内存偏移或 SDK 原始内存写入。
+Snapshots include complete learning/equipment state and progress guards. Original references are pinned with REFramework-managed `add_ref` only for the final transaction; Lua GC owns their lifetime. No raw offsets or process-memory write APIs are used.
 
-实际写入之前对原集合和记录使用 REFramework 管理的 `add_ref`，防止原生 setter 替换记录后使回滚引用失效。生命周期由 Lua GC 释放，不使用永久引用，也不跨帧保留角色或回滚对象。普通 UI 状态采样复用同次已读取快照，避免为写入契约重复查询全表原生 getter。
+## Skill discovery and acquisition
 
-预检要求普通职业双方都可访问、上下文不同、集合可回滚、等级属于该技能、内容可用。0.2.0 扫描所有职业和龙选者引用，将实际变化技能的引用槽纳入自动卸装计划。反射核验技能 None、职业和 SkillSlot 枚举，并以 getEquipList、getSkillID 交叉检查数组索引与全部非哨兵槽。批量跳过的同步技能同时跳过双方，剩余项目一并执行。
+Skills come from `CustomSkillInformationData` and `ExCustomSkillData`, grouped by job, skill ID and raw level. Discovery uses valid parameter and runtime enum records, not guessed ID ranges. Placeholder GUIDs, incompatible metadata and unverified ownership remain unavailable.
 
-装备与学习属于同一个事务：先对全部目标角色调用原生 setSkill(job, None, slot)；核验指定槽已空、其余槽/全部学习记录/保护数据都未变化，然后写入所选学习状态。最终回读要求目标记录准确、集合总数准确、其他记录的等级/提示标记/相对顺序一致，以及装备槽仅出现预览列出的清空差异、保护指纹未变。失败后倒序恢复全部目标角色的原始集合对象与记录引用，再通过原生 setSkill 恢复槽位，最后统一核验双方。原生装备 setter 返回 false 或回读不匹配视为失败，不以 raw-array 写入冒充恢复。原生接口如果意外改变保护数据，不越界编辑额外系统；回滚核验失败时持久锁定并要求完整存档恢复。
+`EnabledCustomSkills` is a prepopulated table: record presence alone does not mean learned. Record `get_IsEnableProp`, context `isCustomSkillEnable` and `getCustomSkillLevel` are cross-checked. The native observations establish learned/unlearned grade semantics; acquired state and raw grade are stored separately, including sentinel rows.
 
-同级且已获取属于无操作，不卸装。明确删除可以清理未获取但仍被异常装备引用的槽位，因此无操作分支同时考虑记录和槽位变更数量。设备 None 编号与学习的未获取原始等级来自不同原生契约，不能混为同一个“零”。job-0 哨兵槽必须保持空，既不传给装备 setter，也不参与清空。
+Valid level choices also require reinforcement metadata and usable name/description GUIDs. Shared skills retain vocation-specific localized text. EX-marked variants are kept outside ordinary selectable levels; DLC weapon traits remain the native EX source. Expansion skills require verified content availability.
 
-未知技能、未知职业规则、空 GUID 占位记录、缺失扩展标记、冲突的参数元数据不会成为写入对象。本地化临时未解析可用枚举名/技能 ID 显示，刷新恢复；GUID 本身无法核验时只读。新版本在参数表和运行时枚举同时注册的技能自动适配，未注册 ID 只读。
+Learning/upgrading uses `setCustomSkillEnable`; downgrading edits the selected record's grade. Forgetting resets only that record to the verified native unlearned grade and preserves prepopulated rows. List removal/insertion exists solely for structural recovery.
 
-原始普通变体与可选等级集合分开：原始记录用于识别既有等级，可选集合还需前一级 `_Reinforceability=true`、有效且不重复的名称/说明 GUID。大师重复/空说明的 Lv2 不参与单项或批量授予。共享技能的职业文本以 job 区分，只有同一职业、类别、等级重复数据冲突才只读；UI 使用所选职业的本地化文本，事务仍以原属职业判断角色范围。
+## Equipment and protected state
 
-第三次诊断确认装箱读取成功，120 项归属有效，其中 14 项仅低等级可选、106 项有普通 Lv1/Lv2。另有 8 项扩展技能的 Lv2 说明 GUID 非零，但本地化始终返回空；0.1.3 暂时排除这些不可核验的升级行，允许刷新恢复。批量学习若会降低存档既有原始等级则跳过整项双方；单项明确降级仍可执行。每条非哨兵记录还读 `getCustomSkillLevel`，预检和写入/回滚回读均要求原生等级等于实际保存/期望等级。
+Skill transactions enumerate all vocation palettes, including Warfarer references. Each slot is cross-checked against native equipment getters. Only references to actually changed skills enter the unequip plan; the job-None sentinel is never passed to a setter.
 
-扩展所有权依据 `GameSystem.HasContents0014` / `ExtraContentsManager.IsRegistedContents0014`；已在三次诊断中读取 true，接口不可读时拒绝获取扩展普通技能。未拥有场景仍需验收。用户明确 EX 强化由 DLC 武器词条给予：本 Mod 保持该设计，不实现凭空授予 EX，也不编辑武器或词条。Ex 表中的新增普通技能纳入已拥有规则；`_IsExSkill=true` 的资料只作说明，不进入普通保存等级候选。没有写入所有权或使用大师 ID 范围猜测。
+All planned slots are cleared with native `setSkill(job, None, slot)` before learning changes. An intermediate verification checks that only those slots changed and learning/protected data is intact. Final verification includes every learning row, relative ordering, grade/viewed flags, equipment and protected progress. Same-grade acquired edits preserve equipment; forgetting can also clear an abnormal equipped reference to an unlearned skill.
 
-0.2.0 UI 使用已安装 REFramework 的表格绑定，将选择、角色状态、目标等级、确认依次排列。批量及工具折叠，逐项预览每页 10 条，技能说明和装备位置按需展开。更换职业、技能、搜索或等级取消旧预览；初次选择优先采用觉醒者当前有效等级。渲染只接收普通 Lua 值，不访问游戏对象；所有 table/tree/font/disabled 栈异常时成对退出。文本按可用面板宽度及 UTF-8 字符近似宽度换行。
+Rollback restores original learning records and uses native setters for slots. Guard-only fields are not silently rewritten to hide unexpected side effects. Skills and [vocation/JP edits](PROGRESS.md) have separate allowed-change rules; vocation edits compare raw skill/character guards and independently validate job data, without reusing a job-bearing immutable fingerprint.
 
-UI 不显示内部签名、文件路径、参数筛选或 EX 技术说明，完整内容保留在日志、诊断和中文介绍。主界面保留正常操作反馈、不可访问角色、只读状态及失败/恢复锁定信息。字体仅尝试载入一次，失败后通过脚本重载重试，避免每帧重复载入错误。
+## Presentation
 
-用户已确认 0.1.3 普通编辑生效，四份成功结果日志已留存。0.2.0 改为原生自动卸下再修改，两个新日志确认主随从一槽卸下、双方删除/重新学习成功。其他引用、失败恢复、持久化或 Fluffy 的具体效果没有从单个成功场景推断通过；分别记录于运行时验收表。
+The UI never accesses SDK objects. Current vocation information compares both characters; selection controls affect edit scope. Pending changes are shown at the top and confirmation area. Local font/table/disabled/color stacks are unwound on drawing errors. Labels use stable ImGui IDs across languages.
 
-0.3.0 新增中英界面与显式游戏文本语言。控制器负责可选文字语言读取、保存手动偏好及重建缓存；i18n 负责纯显示。当前文字语言 getter 严格反射核验后从原生单例调用，不可用时回退英文。已确认的 get(Guid, via.Language) 用于职业、技能名称和说明；有效升级的原生说明核验独立为 validation_description，避免 UI 语言改变可选等级。预览状态采用原始角色 ID、布尔值、等级和原因代码，渲染时才翻译。详见 LOCALIZATION.md。
-
-首次诊断核实 `via.SceneManager.get_CurrentScene()` 是静态方法、返回 `via.Scene`；`findComponents(System.Type)` 是实例方法、返回 `via.Component[]`。技能获取接口返回 void，列表 Insert/RemoveAt 泛型参数及角色访问路径已从 TDB 83 反射报告核对。此证据仅确认结构/签名，不证明修改行为通过。
-
-0.4.0 通过 skills/progress 注册表复用唯一控制器事务入口；职业域单独处理资格/等级/JP 的差异白名单与精确经验恢复，新增人物/成长/被动/保存武器护甲保护。字号每帧跟随框架、测量缓存仅在字号/语言变化时重建；隐藏职业页不重复采样其保护数据。详细约束和恢复接口见 [职业设计](PROGRESS.md)。
-
-1.0 将职业操作统一成每角色的 changes 列表，逐项解锁与全部解锁共享 prepare_change、白名单核验及恢复流程。职业保护删除包含职业字段的冗余衍生指纹，仍逐字段比较全部原始保护数据；原技能域的不可变职业保护未改变。UI 固定双方只读比较，选中职业的编辑及 JP 编辑各自分区，按钮样式在局部栈内恢复，不影响其他脚本。
+The CJK font loads once. Each draw uses the current REFramework default size; measured widths are invalidated by font-size or language changes. Narrow previews stack vertically and keep the concrete vocation name. See [localization](LOCALIZATION.md).
